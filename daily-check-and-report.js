@@ -232,14 +232,28 @@ ${results.map(r => `${r.success ? '✅' : '❌'} ${r.name}: ${r.status} (${r.dur
     // 发送飞书
     if (CONFIG.feishu.appId && CONFIG.feishu.appSecret) {
       console.log('\n📤 发送飞书消息...');
-      const feishuToken = await getFeishuToken();
-      const sendResult = await sendFeishuMessage(feishuToken, report);
+      console.log(`App ID: ${CONFIG.feishu.appId.substring(0, 10)}...`);
+      console.log(`Chat ID: ${CONFIG.feishu.chatId}`);
       
-      if (sendResult.code === 0) {
-        console.log('✅ 飞书消息发送成功！');
-      } else {
-        console.log(`❌ 飞书发送失败: ${sendResult.msg}`);
+      try {
+        const feishuToken = await getFeishuToken();
+        console.log(`Token obtained: ${feishuToken ? 'success' : 'failed'}`);
+        
+        const sendResult = await sendFeishuMessage(feishuToken, report);
+        console.log('Send result:', JSON.stringify(sendResult, null, 2));
+        
+        if (sendResult.code === 0) {
+          console.log('✅ 飞书消息发送成功！');
+        } else {
+          console.log(`❌ 飞书发送失败: ${sendResult.msg}`);
+        }
+      } catch (e) {
+        console.log(`❌ 飞书发送异常: ${e.message}`);
       }
+    } else {
+      console.log('\n⚠️ 未配置飞书密钥，跳过发送');
+      console.log(`App ID: ${CONFIG.feishu.appId ? 'set' : 'not set'}`);
+      console.log(`App Secret: ${CONFIG.feishu.appSecret ? 'set' : 'not set'}`);
     }
     
     // 保存报告到文件
