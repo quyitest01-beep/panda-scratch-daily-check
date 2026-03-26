@@ -146,18 +146,24 @@ async function getFeishuToken() {
   });
 }
 
-// 发送飞书消息
+// 发送飞书消息 - 修复版
 async function sendFeishuMessage(token, report) {
   return new Promise((resolve, reject) => {
-    // content 需要是 JSON 字符串的字符串形式
+    // 构建 content - 必须是 JSON 字符串
     const contentObj = { text: report };
-    const content = JSON.stringify(contentObj);
+    const contentStr = JSON.stringify(contentObj);
     
-    const data = JSON.stringify({
+    // 构建请求体
+    const payload = {
       receive_id: CONFIG.feishu.chatId,
       msg_type: 'text',
-      content: content  // content 本身已经是 JSON 字符串
-    });
+      content: contentStr
+    };
+    
+    const data = JSON.stringify(payload);
+    
+    console.log('Debug - Content:', contentStr.substring(0, 100) + '...');
+    console.log('Debug - Payload length:', data.length);
     
     const req = https.request({
       hostname: 'open.feishu.cn',
@@ -166,7 +172,7 @@ async function sendFeishuMessage(token, report) {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'Content-Length': data.length
+        'Content-Length': Buffer.byteLength(data)
       }
     }, (res) => {
       let body = '';
@@ -237,7 +243,7 @@ ${results.map(r => `${r.success ? '✅' : '❌'} ${r.name}: ${r.status} (${r.dur
       
       try {
         const feishuToken = await getFeishuToken();
-        console.log(`Token obtained: ${feishuToken ? 'success' : 'failed'}`);
+        console.log(`Token: ${feishuToken ? 'OK' : 'FAILED'}`);
         
         const sendResult = await sendFeishuMessage(feishuToken, report);
         console.log('Send result:', JSON.stringify(sendResult, null, 2));
@@ -246,14 +252,14 @@ ${results.map(r => `${r.success ? '✅' : '❌'} ${r.name}: ${r.status} (${r.dur
           console.log('✅ 飞书消息发送成功！');
         } else {
           console.log(`❌ 飞书发送失败: ${sendResult.msg}`);
+          process.exit(1);
         }
       } catch (e) {
         console.log(`❌ 飞书发送异常: ${e.message}`);
+        process.exit(1);
       }
     } else {
       console.log('\n⚠️ 未配置飞书密钥，跳过发送');
-      console.log(`App ID: ${CONFIG.feishu.appId ? 'set' : 'not set'}`);
-      console.log(`App Secret: ${CONFIG.feishu.appSecret ? 'set' : 'not set'}`);
     }
     
     // 保存报告到文件
