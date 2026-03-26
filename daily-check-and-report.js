@@ -149,14 +149,14 @@ async function getFeishuToken() {
 // 发送飞书消息
 async function sendFeishuMessage(token, report) {
   return new Promise((resolve, reject) => {
-    const content = JSON.stringify({
-      text: report
-    });
+    // content 需要是 JSON 字符串的字符串形式
+    const contentObj = { text: report };
+    const content = JSON.stringify(contentObj);
     
     const data = JSON.stringify({
       receive_id: CONFIG.feishu.chatId,
       msg_type: 'text',
-      content: content
+      content: content  // content 本身已经是 JSON 字符串
     });
     
     const req = https.request({
